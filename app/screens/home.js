@@ -69,7 +69,9 @@ const HomeScreen = () => {
       '2': 2, 'two': 2,
       '3': 3, 'three': 3,
       '4': 4, 'four': 4,
-     'close': 'close'
+     'close': 'close',
+     'ek':1 , "do":2,
+     'teen':3, 'char':4
     };
 
     const buttonNumber = commands[normalized];
