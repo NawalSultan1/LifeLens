@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Dimensions } from 'react-native';
 import { Camera, useCameraDevices, useFrameProcessor, useCameraPermission, useCameraDevice } from 'react-native-vision-camera';
-import { runOnJS } from 'react-native-reanimated';
 import { Asset } from 'expo-asset';
 // import { Camera } from 'expo-camera';
 import { InferenceSession, Tensor } from 'onnxruntime-react-native';
