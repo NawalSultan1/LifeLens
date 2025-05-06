@@ -65,7 +65,8 @@
           ]
         }
       ],
-      "onnxruntime-react-native"
+      "onnxruntime-react-native",
+       "react-native-reanimated"
     ],
     "extra": {
       "eas": {
