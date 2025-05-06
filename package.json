@@ -19,6 +19,7 @@
     "expo-speech": "~13.0.1",
     "expo-speech-recognition": "^1.1.1",
     "expo-status-bar": "~2.0.1",
+    "jpeg-js": "^0.4.4",
     "onnxruntime-react-native": "^1.21.0",
     "react": "18.3.1",
     "react-native": "0.76.7",
@@ -28,7 +29,8 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-tflite": "^0.0.2",
-    "react-native-vision-camera": "^4.6.4"
+    "react-native-vision-camera": "^4.6.4",
+    "react-native-worklets-core": "^1.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

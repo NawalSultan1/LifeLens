@@ -23,12 +23,18 @@ function postprocess(outputTensor) {
   // Return array [ { x, y, w, h, label, confidence }, … ]
 }
 
-const CameraViewScreen = ({ modelId, onClose }) => {
+const CameraViewScreen1 = ({ modelId, onClose }) => {
 
   const [session, setSession] = useState(null);
   const [boxes, setBoxes] = useState([]);
   const { hasPermission, requestPermission } = useCameraPermission()
   const device = useCameraDevice('back');
+
+
+  //handling permission request
+  useEffect(() => {
+    if (!hasPermission) requestPermission();
+  }, [hasPermission]);
 
 
   // 1) Load the ONNX model session once
@@ -41,39 +47,59 @@ const CameraViewScreen = ({ modelId, onClose }) => {
     })();
   }, []);
 
+
+ 
+   // 2) Frame processor to grab JPEG bytes
+   const frameProcessor = useFrameProcessor((frame) => {
+     'worklet';
+     if (frame.timestamp % 5 === 0) { // Process every 5th frame
+       const jpegData = frame.toJPEG();
+       runOnJS(processFrame)(jpegData, frame.width, frame.height);
+     }
+   }, [session]);
+
+
+
   
-  if (device == null) {
-    return <View><Text>Loading camera...</Text></View>;
-  }
+//   if (device == null) {
+//     return <View><Text>Loading camera...</Text></View>;
+//   }
 
   useEffect(() => {
     console.log('Available devices:', device);
   }, [device]);
 
-  
-  // 2) Frame processor to grab JPEG bytes
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
-    console.log(frame)
-    // const jpegData = frame.toJPEG(); // Vision Camera API
-    // runOnJS(processFrame)(jpegData, frame.width, frame.height);
-  }, [session]);
 
   // 3) Run inference on JS thread
   const processFrame = async (jpegData, imgW, imgH) => {
-    if (!session) return;
+    try {
+     if (!session) return;
     const data = preprocess(jpegData, imgW, imgH);
     const tensor = new Tensor('float32', data, [1, 3, imgH, imgW]);
     const outputMap = await session.run({ input: tensor });
     const raw = outputMap[Object.keys(outputMap)[0]];
     const newBoxes = postprocess(raw);
     setBoxes(newBoxes);
-  };
+  } catch(e) {
+
+  }
+};
 
   // if (!device) return <View style={styles.cameraContainer} />;
-  if (!hasPermission) {
-    return <View><Text>Camera permission not granted</Text></View>;
-  }
+//   if (!hasPermission) {
+//     return <View><Text>Camera permission not granted</Text></View>;
+//   }
+
+     // 2. THEN check conditions
+     if (device == null || !hasPermission) {
+      return (
+        <View>
+          <Text>
+            {device == null ? 'Loading camera...' : 'Camera permission not granted'}
+          </Text>
+        </View>
+      );
+    }
   
   return (
     <View style={styles.cameraContainer}>
@@ -137,4 +163,4 @@ const styles = StyleSheet.create({
   closeButtonText: { color: '#000' },
 });
 
-export default CameraViewScreen;
+export default CameraViewScreen1;
