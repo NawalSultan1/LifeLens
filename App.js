@@ -2,7 +2,7 @@ import * as React from 'react';
 import HomeScreen from './app/screens/home';
 import CameraViewScreen from './app/screens/home_panga';
 import CameraViewScreen1 from './app/screens/home_panga2';
-import 'react-native-worklets-core';
+// import 'react-native-worklets-core';
 
 
 

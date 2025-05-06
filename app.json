@@ -66,12 +66,8 @@
         }
       ],
       "onnxruntime-react-native",
-      "./plugins/withOnnxRuntime",
-      ["react-native-reanimated", {
-        "android": {
-          "hermesEnabled": true
-        }
-      }]
+      "./plugins/withOnnxRuntime"
+    
     ],
     "extra": {
       "eas": {

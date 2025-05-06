@@ -7,7 +7,7 @@ import { Asset } from 'expo-asset';
 // import { Camera } from 'expo-camera';
 import { InferenceSession, Tensor } from 'onnxruntime-react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
-import 'react-native-worklets-core';
+// import 'react-native-worklets-core';
 
 
 // Screen dimensions for scaling boxes
