@@ -9,9 +9,9 @@ import CameraViewScreen1 from './app/screens/home_panga2';
 
 const App = () => {
   return (
-    // <HomeScreen />
+    <HomeScreen />
     // <CameraViewScreen/>
-    <CameraViewScreen1/>
+    // <CameraViewScreen1/>
 
   );
 };
