@@ -1,18 +1,19 @@
-const { getDefaultConfig } = require('@expo/metro-config');
+const { getDefaultConfig, mergeConfig } = require('@expo/metro-config');
 
-const config = getDefaultConfig(__dirname);
+const defaultConfig = getDefaultConfig(__dirname);
 
-config.resolver.assetExts.push('onnx'); // allow .onnx as a static asset
-config.transformer = {
-     ...config.transformer,
-     unstable_allowRequireContext: true,
-     getTransformOptions: async () => ({
-       transform: {
-         experimentalImportSupport: false,
-         inlineRequires: true,
-       },
-     }),
-   };
-   
-
-module.exports = config;
+module.exports = mergeConfig(defaultConfig, {
+  resolver: {
+    assetExts: [...defaultConfig.resolver.assetExts, 'tflite'],
+  },
+  transformer: {
+    ...defaultConfig.transformer,
+    unstable_allowRequireContext: true,
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
+  },
+});
