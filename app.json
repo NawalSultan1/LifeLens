@@ -48,12 +48,6 @@
       "expo-speech-recognition",
       "expo-dev-client",
       [
-        "expo-image-manipulator",
-        {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos"
-        }
-      ],
-      [
         "expo-speech-recognition",
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
@@ -67,16 +61,6 @@
         "react-native-fast-tflite",
         {
           "enableCoreMLDelegate": true
-        }
-      ],
-      [
-        "@expo/config-plugins",
-        {
-          "android": {
-            "gradleProperties": {
-              "org.gradle.jvmargs": "-Xmx4g -XX:MaxPermSize=2048m -XX:+HeapDumpOnOutOfMemoryError"
-            }
-          }
         }
       ],
       "./plugins/withFastTFLite"
