@@ -11,9 +11,7 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff",
-      "assetBundlePatterns": [
-      "app/assets/models/*"
-    ]
+      "assetBundlePatterns": ["app/assets/models/*"]
     },
     "ios": {
       "supportsTablet": true,
@@ -29,7 +27,9 @@
       },
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "package": "com.nawalsultan.LifeLens"
     },
@@ -48,6 +48,12 @@
       "expo-speech-recognition",
       "expo-dev-client",
       [
+        "expo-image-manipulator",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos"
+        }
+      ],
+      [
         "expo-speech-recognition",
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
@@ -62,7 +68,18 @@
         {
           "enableCoreMLDelegate": true
         }
-      ]
+      ],
+      [
+        "@expo/config-plugins",
+        {
+          "android": {
+            "gradleProperties": {
+              "org.gradle.jvmargs": "-Xmx4g -XX:MaxPermSize=2048m -XX:+HeapDumpOnOutOfMemoryError"
+            }
+          }
+        }
+      ],
+      "./plugins/withFastTFLite"
     ],
     "extra": {
       "eas": {
