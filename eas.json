@@ -9,9 +9,7 @@
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk",
-        "gradleVersion": "7.4.3",
-        "jdk": "17"
+        "buildType": "apk"
       }
     },
     "preview": {
