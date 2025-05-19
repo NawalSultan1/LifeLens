@@ -1,29 +1,26 @@
+// HomeScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import * as Speech from 'expo-speech';
-import CameraView from './CameraView';
+import CameraViewComponent from '../components/CameraView';
 
 
 const HomeScreen = () => {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [activeModel, setActiveModel] = useState(null); // Track active AI model
+  const [activeModel, setActiveModel] = useState(null);
 
-  // Speech Recognition Event Listeners
+  // Speech event handlers
   useSpeechRecognitionEvent('start', () => setIsListening(true));
   useSpeechRecognitionEvent('end', () => {
     setIsListening(false);
-    setTimeout(startListening, 500); // Auto-restart listening
+    setTimeout(startListening, 500);
   });
-  useSpeechRecognitionEvent('result', (event) => {
-    const command = event.results[0]?.transcript || '';
-    setTranscript(command);
-    handleVoiceCommand(command);
+  useSpeechRecognitionEvent('result', ({ results }) => {
+    const text = results[0]?.transcript.toLowerCase().trim();
+    handleVoiceCommand(text);
   });
-  useSpeechRecognitionEvent('error', (event) => {
-    console.log("Recognition error:", event.error);
-  });
+  useSpeechRecognitionEvent('error', (e) => console.log('Recognition error:', e.error));
 
   useEffect(() => {
     checkPermissions();
@@ -32,19 +29,13 @@ const HomeScreen = () => {
   const checkPermissions = async () => {
     const { status } = await ExpoSpeechRecognitionModule.getPermissionsAsync();
     if (status !== 'granted') {
-      requestPermissions();
-    } else {
-      startListening();
+      const res = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!res.granted) {
+        Alert.alert('Permission required', 'Microphone access needed for voice commands');
+        return;
+      }
     }
-  };
-
-  const requestPermissions = async () => {
-    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!result.granted) {
-      Alert.alert('Permission required', 'Microphone access needed for voice commands');
-    } else {
-      startListening();
-    }
+    startListening();
   };
 
   const startListening = async () => {
@@ -54,123 +45,66 @@ const HomeScreen = () => {
         continuous: true,
         interimResults: false,
         requiresOnDeviceRecognition: false,
-        contextualStrings: ['one', 'two', 'three', 'four']
+        contextualStrings: ['one','two','three','four'],
       });
       Speech.speak('Ready for commands');
-    } catch (error) {
-      console.log('Start listening error:', error);
+    } catch (e) {
+      console.log('Start listening error:', e);
     }
   };
 
-  const handleVoiceCommand = (command: string) => {
-    const normalized = command.toLowerCase().trim();
-    const commands: { [key: string]: any } = {
-      '1': 1, 'one': 1,
-      '2': 2, 'two': 2,
-      '3': 3, 'three': 3,
-      '4': 4, 'four': 4,
-     'close': 'close',
-     'ek':1 , "do":2,
-     'teen':3, 'char':4
+  const handleVoiceCommand = (cmd) => {
+    const map = {
+      '1':1,'one':1,'2':2,'two':2,'3':3,'three':3,'4':4,'four':4,'close':'close'
     };
-
-    const buttonNumber = commands[normalized];
-    if (buttonNumber) {
-      console.log(`Button ${buttonNumber} triggered`);
-      Speech.speak(`Button ${buttonNumber} activated`);
-      if (buttonNumber ==="close"){
-          setActiveModel(null)
-      }else{
-           setActiveModel(buttonNumber); // Activate the corresponding AI model
-      }
-    } else if (normalized) {
-      Speech.speak('Try numbers one to four');
+    const val = map[cmd];
+    if (val) {
+      if (val === 'close') setActiveModel(null);
+      else setActiveModel(val);
+      Speech.speak(val==='close'? 'Closing camera':'Opening camera');
+    } else if (cmd) {
+      Speech.speak('Please say one, two, three, or four.');
     }
   };
 
-  const handleButtonPress = (buttonNumber) => {
-    console.log(`Button ${buttonNumber} pressed`);
-    Speech.speak(`Button ${buttonNumber} activated`);
-    setActiveModel(buttonNumber); // Activate the corresponding AI model
+  const handleButtonPress = (n) => {
+    setActiveModel(n);
+    Speech.speak(`Opening camera ${n}`);
   };
 
-  const renderButton = (position, number) => (
+  const renderButton = (pos, num) => (
     <TouchableOpacity
-      style={[styles.button, styles[position]]}
-      onPress={() => handleButtonPress(number)}
-      accessibilityLabel={`Button ${number}`}
+      style={[styles.button, styles[pos]]}
+      onPress={() => handleButtonPress(num)}
+      accessibilityLabel={`Button ${num}`}
     >
-      <Text style={styles.buttonText}>{number}</Text>
+      <Text style={styles.buttonText}>{num}</Text>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.status}>
-        {isListening ? 'Listening...' : 'Not listening'}
-      </Text>
-
-      <ScrollView style={styles.transcriptContainer}>
-        <Text style={styles.transcriptText}>{transcript}</Text>
-      </ScrollView>
-
-      {/* Render Camera View if a model is active */}
-      {activeModel && (
-        <CameraView modelId={activeModel} onClose={() => setActiveModel(null)} />
-      )}
-
-      {/* Render buttons */}
-      {renderButton('top-left', 1)}
-      {renderButton('top-right', 2)}
-      {renderButton('bottom-left', 3)}
-      {renderButton('bottom-right', 4)}
+      <Text style={styles.status}>{isListening?'Listening...':'Not listening'}</Text>
+      { activeModel && <CameraViewComponent onClose={() => setActiveModel(null)} /> }
+      { renderButton('topLeft',1) }
+      { renderButton('topRight',2) }
+      { renderButton('bottomLeft',3) }
+      { renderButton('bottomRight',4) }
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  status: {
-    fontSize: 20,
-    marginBottom: 10,
-    color: '#333',
-  },
-  transcriptContainer: {
-    height: 100,
-    width: '100%',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 150,
-  },
-  transcriptText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  button: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#2196F3',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  'top-left': { top: 40, left: 40 },
-  'top-right': { top: 40, right: 40 },
-  'bottom-left': { bottom: 40, left: 40 },
-  'bottom-right': { bottom: 40, right: 40 },
+  container:{ flex:1, alignItems:'center', justifyContent:'center' },
+  status:{ fontSize:18, margin:10 },
+  button:{ position:'absolute', width:80, height:80, borderRadius:40, backgroundColor:'#007bff', alignItems:'center', justifyContent:'center' },
+  buttonText:{ color:'#fff', fontSize:24, fontWeight:'bold' },
+  topLeft:{ top:40, left:40 },
+  topRight:{ top:40, right:40 },
+  bottomLeft:{ bottom:40, left:40 },
+  bottomRight:{ bottom:40, right:40 },
 });
 
 export default HomeScreen;
+
+// CameraViewComponent.js
