@@ -1,146 +1,161 @@
-// components/CameraViewComponent.js
-import React, { useRef, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   View,
-  StyleSheet,
-  TouchableOpacity,
   Text,
+  TouchableOpacity,
+  StyleSheet,
   Dimensions,
-  Alert,
 } from "react-native";
-
-import { CameraView } from "expo-camera";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as Speech from "expo-speech";
 import {
-  useObjectDetectionModel,
-  ObjectDetectionModel,
-} from "@infinitered/react-native-mlkit-object-detection";
+  useSpeechRecognitionEvent,
+  ExpoSpeechRecognitionModule,
+} from "expo-speech-recognition";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
-export default function CameraViewComponent({ onClose }) {
-  const cameraRef = useRef(null);
-  const [objects, setObjects] = useState([]);
-  const [hasPermission, setHasPermission] = useState(null);
+const CAMERA_MODES = {
+  1: "Currency Detection",
+  2: "Object Detection",
+  3: "Text Detection",
+  4: "Hurdle Detection",
+};
 
-  // Load the model
-  const { model, loading, error } = useObjectDetectionModel({
-    modelName: "default", // or 'autoML' if you're using custom models
+export default function CameraViewComponent({ route, navigation }) {
+  const { mode } = route.params;
+  const [permission, requestPermission] = useCameraPermissions();
+
+  const [lastSpokenTime, setLastSpokenTime] = useState(0);
+  const cameraRef = useRef(null);
+
+  // Announce camera mode
+  useEffect(() => {
+    const modeName = CAMERA_MODES[mode];
+    Speech.speak(`Opening ${modeName}`);
+    setTimeout(() => {
+      Speech.speak("Model loading...");
+    }, 1000);
+    setTimeout(() => {
+      Speech.speak("Model loaded successfully");
+    }, 2000);
+  }, [mode]);
+
+  // Listen for "close" command
+  useSpeechRecognitionEvent("result", ({ results }) => {
+    const cmd = results[0]?.transcript?.toLowerCase().trim() || "";
+    if (cmd.includes("close")) {
+      Speech.speak("Closing camera view");
+      navigation.goBack();
+    }
   });
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await CameraView.requestPermissionsAsync();
-      setHasPermission(status === "granted");
-    })();
-  }, []);
+  // Keep listening after stop
+  useSpeechRecognitionEvent("end", () => {
+    setTimeout(() => ExpoSpeechRecognitionModule.start(), 500);
+  });
 
-  if (error) {
-    Alert.alert("Model Error", error.message);
-  }
-
-  if (!hasPermission) {
+  // Render UI
+  if (!permission) return null;
+  if (!permission.granted)
     return (
-      <View style={styles.container}>
-        <Text>Camera permission is required</Text>
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>Camera permission is required</Text>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}
+        >
+          <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        </TouchableOpacity>
       </View>
     );
-  }
-
-  const handleProcessFrame = async ({ nativeEvent }) => {
-    if (!model || !nativeEvent?.base64Image) return;
-
-    try {
-      const result = await model.process(nativeEvent.base64Image);
-      console.log("Detected objects:", result);
-
-      if (result.length > 0) {
-        const labels = result.map((obj) => obj.label).join(", ");
-        setObjects(result);
-      } else {
-        setObjects([]);
-      }
-    } catch (err) {
-      console.error("Error processing frame:", err);
-    }
-  };
 
   return (
     <View style={styles.container}>
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        facing="back"
-        onCameraReady={() => console.log("Camera ready")}
-        onFrameProcessed={handleProcessFrame}
-        enableTorch={false}
-        mode="picture"
-        imageType="jpg"
-        quality="high"
-        accessibilityLabel="Live camera view"
-      />
+      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
 
-      {/* Render bounding boxes */}
-      {objects.map((obj, index) => (
-        <View
-          key={index}
-          style={[
-            styles.box,
-            {
-              left: obj.frame.origin.x * SCREEN_W,
-              top: obj.frame.origin.y * SCREEN_H,
-              width: obj.frame.size.width * SCREEN_W,
-              height: obj.frame.size.height * SCREEN_H,
-            },
-          ]}
-        >
-          <Text style={styles.label}>{obj.label}</Text>
-        </View>
-      ))}
+      {/* Mode Label Overlay */}
+      <View style={styles.statusOverlay}>
+        <Text style={styles.modeText}>{CAMERA_MODES[mode]}</Text>
+      </View>
 
       {/* Close Button */}
-      <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+      <TouchableOpacity
+        style={styles.closeBtn}
+        onPress={() => {
+          Speech.speak("Closing camera");
+          navigation.goBack();
+        }}
+        accessibilityLabel="Close camera"
+        accessibilityRole="button"
+      >
         <Text style={styles.closeText}>Close</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: SCREEN_W,
-    height: SCREEN_H,
-    zIndex: 1,
+    backgroundColor: "#000",
   },
   camera: {
     flex: 1,
   },
-  box: {
+  statusOverlay: {
     position: "absolute",
-    borderWidth: 2,
-    borderColor: "red",
-    backgroundColor: "rgba(255, 0, 0, 0.2)",
+    top: 40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
-  label: {
-    color: "red",
-    backgroundColor: "#fff",
-    fontSize: 12,
-    padding: 2,
+  modeText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#00ff00",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
   },
   closeBtn: {
     position: "absolute",
     bottom: 30,
     right: 30,
     backgroundColor: "#dc3545",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 50,
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
   },
   closeText: {
     color: "#fff",
+    fontSize: 15,
+    fontWeight: "bold",
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  permissionText: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#fff",
+  },
+  permissionButton: {
+    backgroundColor: "#007bff",
+    padding: 15,
+    borderRadius: 5,
+  },
+  permissionButtonText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });
